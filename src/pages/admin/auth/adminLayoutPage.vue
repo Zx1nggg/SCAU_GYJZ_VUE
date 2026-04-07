@@ -67,10 +67,7 @@
               <el-icon><List /></el-icon>
               <span>项目列表</span>
             </el-menu-item>
-            <el-menu-item index="/admin/projects/create">
-              <el-icon><Plus /></el-icon>
-              <span>创建项目</span>
-            </el-menu-item>
+
           </el-sub-menu>
 
           <el-sub-menu index="/admin/main/donations">
@@ -84,17 +81,12 @@
             </el-menu-item>
           </el-sub-menu>
 
-          <el-menu-item index="/admin/users">
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-
           <el-menu-item index="/admin/main/reports">
             <el-icon><DataAnalysis /></el-icon>
             <span>数据报表</span>
           </el-menu-item>
 
-          <el-menu-item index="/admin/settings">
+          <el-menu-item index="/admin/main/settings">
             <el-icon><Setting /></el-icon>
             <span>系统设置</span>
           </el-menu-item>
@@ -112,7 +104,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Management, Bell, ArrowDown, User, OfficeBuilding, Setting,
   SwitchButton, Odometer, Folder, List, Plus, Money,
@@ -135,23 +127,50 @@ const showNotifications = () => {
 }
 
 // 处理下拉菜单
-const handleCommand = async (command: string) => {
+const handleCommand = (command: string) => {
   switch (command) {
     case 'profile':
-      router.push('/admin/profile')
+      // 占位路由：后续你可以把个人资料、机构信息都整合进 settings 页面当做不同的 tab
+      router.push('/admin/main/settings?tab=profile') 
       break
     case 'org':
-      router.push('/admin/organization')
+      router.push('/admin/main/settings?tab=org')
       break
     case 'settings':
-      router.push('/admin/settings')
+      router.push('/admin/main/settings')
       break
     case 'logout':
-      await authStore.logout()
-      ElMessage.success('已退出登录')
-      router.push('/adminLogin')
+      executeLogout()
       break
   }
+}
+// 退出登录核心逻辑
+const executeLogout = () => {
+  ElMessageBox.confirm(
+    '确定要退出当前账号吗？',
+    '退出提示',
+    {
+      confirmButtonText: '安全退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    // 1. 清除 Pinia 里的状态 (直接置空)
+    authStore.token = ''
+    authStore.userInfo = null
+    // 或者直接调用 authStore 里的退出方法：authStore.logoutAction()
+    
+    // 2. 清除本地存储 (如果有的话)
+    localStorage.removeItem('adminToken')
+    localStorage.removeItem('adminUserInfo')
+
+    // 3. 提示并跳转
+    ElMessage.success('已安全退出系统')
+    router.push('/adminLogin') // 注意改成你实际的登录路由路径
+    
+  }).catch(() => {
+    // 用户点击取消，不执行任何操作
+  })
 }
 </script>
 

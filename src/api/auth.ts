@@ -1,5 +1,6 @@
 // src/api/auth.ts
 import request from '@/utils/request'
+import type { UserInfo } from '@/stores/auth'
 
 // 定义 User 对象类型
 export interface User {
@@ -18,6 +19,7 @@ export interface DonorLoginResponse {
   avatar?: string
   token?: string
   userStatus?: number
+  createTime?: string
 }
 
 export interface AdminLoginResponse {
@@ -55,6 +57,15 @@ export const donorRegister = (user:User): Promise<ApiResponse<any>> => {
 
 export const adminRegisterApply = (user:User): Promise<ApiResponse<any>> => {
   return request.post('/v1/admin/registerApply', user)
+}
+
+/* 显式传入 userId，匹配后端的 PUT /api/v1/users/{userId} */
+export const updateUserInfo = (userId: number, data: Partial<Pick<UserInfo, 'nickname' | 'phone' | 'avatar'>>) => {
+  return request({
+    url: `/v1/users/${userId}`,
+    method: 'put',
+    data
+  })
 }
 
 // 发送验证码

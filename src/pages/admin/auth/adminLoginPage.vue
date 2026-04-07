@@ -123,7 +123,16 @@ const handleLogin = async () => {
         displayName: userData.nickname
       }
       
-      // 🌟 核心修复区：将 Token 和 UserInfo 持久化存储到浏览器中
+      // 🌟 核心修复区：在存入新身份前，彻底清空所有可能的历史残留状态！防死循环！
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      localStorage.removeItem('isLoggedIn')
+      localStorage.removeItem('userType')
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('userInfo')
+      sessionStorage.removeItem('isLoggedIn')
+      sessionStorage.removeItem('userType')
+      
       // 根据是否勾选"记住密码"决定存到哪里
       const storage = form.remember ? localStorage : sessionStorage
       
@@ -150,7 +159,7 @@ const handleLogin = async () => {
       const role = Number(userData.role)
       if (role === 9) {
         alert('登录成功，欢迎超级管理员')
-        router.push('/admin/super-dashboard')
+        router.push('/sadmin/main')
       } else if (role === 2) {
         alert('登录成功，欢迎公益机构管理员')
         router.push('/admin/main')

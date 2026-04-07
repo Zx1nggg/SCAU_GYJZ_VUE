@@ -15,6 +15,7 @@ export interface UserInfo {
   userType?: 'donor' | 'admin'  // 前端用的用户类型
   lastLogin?: string          // 最后登录时间
   displayName?: string        // 显示名称（前端计算）
+  createTime?: string         // 创建时间
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -45,8 +46,8 @@ export const useAuthStore = defineStore('auth', () => {
   // 显示名称：捐赠者显示nickname，管理员显示nickname（真名）
   const displayName = computed(() => {
     if (!userInfo.value) return '用户'
-    if (userInfo.value.displayName) return userInfo.value.displayName
     if (userInfo.value.nickname) return userInfo.value.nickname
+    if (userInfo.value.displayName) return userInfo.value.displayName
     if (userInfo.value.username) return userInfo.value.username
     if (userInfo.value.phone) return userInfo.value.phone
     return '用户'

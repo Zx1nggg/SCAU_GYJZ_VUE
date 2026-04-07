@@ -53,7 +53,13 @@ const routes = [
             path: 'reports',
             name: 'orgReports',
             component: () => import('../pages/admin/organizations/Reports.vue')
+        },
+        {
+            path: 'settings',
+            name: 'Setting',
+            component: () => import('../pages/admin/auth/Setting.vue')
         }
+
        ]
     },
     {
@@ -82,6 +88,36 @@ const routes = [
             path: 'records',
             name: 'myDonations',
             component: () => import('../pages/donor/donations/myDonationsPage.vue')
+        },
+        {
+            path: 'subscriptions',
+            name: 'mySubscriptions',
+            component: () => import('../pages/donor/subscriptions/MySubscriptionsPage.vue')
+        }
+       ]
+    },
+    {
+        path: '/sadmin/main',
+        name: 'sadminMain',
+        component: () => import('../pages/sadmin/auth/sadminLayoutPage.vue'),
+       children: [
+        {
+        path: 'super-dashboard',
+        name: 'SAdminDashboard',
+        component: () => import('../pages/sadmin/auth/sadminDashboardPage.vue'),
+        meta: { title: '仪表盘' }
+        },
+        {
+            path: 'applications',
+            name: 'OrgApplications',
+            component: () => import('../pages/sadmin/applications/ApplicationManagement.vue'),
+            meta: { title: '申请处理' }
+        },
+        {
+            path: 'users',
+            name: 'UserManagement',
+            component: () => import('../pages/sadmin/users/UserManagement.vue'),
+            meta: { title: '用户管理' }
         }
        ]
     }

@@ -49,14 +49,35 @@
 
       <el-row :gutter="20">
         <el-col :span="8" v-for="project in projectList" :key="project.id">
-          <el-card shadow="hover" @click="goDetail(project.id)" class="clickable-card">
-            <h3 class="project-title">{{ project.name || project.title }}</h3>
-            <p class="desc">{{ project.description }}</p>
-            <div class="amount">
-              目标：¥{{ project.targetAmount || 0 }}
+          <el-card shadow="hover" class="clickable-card">
+            <!-- 图片区域  -->
+            <img 
+              :src="resolveImageUrl(project.coverImage)" 
+              class="project-cover" 
+              @error="handleImageError"
+            >
+            <div class="project-content">
+              <h3 class="project-title">{{ project.name || project.title }}</h3>
+              <p class="desc">{{ project.content || project.description || '暂无简介' }}</p>
+              <div class="progress-info">
+                <span>进度：{{ calculatePercent(project) }}%</span>
+                <span>目标：¥{{ project.targetAmount || 0 }}</span>
+              </div>
+              <el-progress 
+                :percentage="calculatePercent(project)" 
+                :status="project.projectStatus === 1 ? '' : 'exception'" 
+                :show-text="false" 
+              />
+              <el-button 
+                type="primary" 
+                size="small" 
+                style="margin-top: 15px; width: 100%;" 
+                :disabled="project.projectStatus !== 1"
+                @click="openDonateDialog(project)"
+              >
+                我要捐赠
+              </el-button>
             </div>
-            <!-- 可以的话这里可以加个进度条 -->
-            <el-button type="primary" size="small" style="margin-top: 10px;">我要捐赠</el-button>
           </el-card>
         </el-col>
         <!-- 如果没有项目时显示 -->
@@ -64,76 +85,209 @@
       </el-row>
     </el-card>
 
-    <!-- 我的捐赠记录 -->
-    <el-card class="record-card" v-loading="loadingDonations">
+    <!-- 我的订阅记录 -->
+    <el-card class="record-card" v-loading="loadingSubscriptions">
       <template #header>
         <div class="card-header">
-          <span>我的捐赠记录</span>
+          <span>我的订阅动态</span>
         </div>
       </template>
 
-      <el-table :data="donationList">
-        <el-table-column prop="projectName" label="项目名称" />
-        <el-table-column prop="amount" label="金额" />
-        <el-table-column prop="donationTime" label="时间" />
-        <el-table-column label="票据">
+      <el-table :data="subscriptionList">
+        <el-table-column prop="projectTitle" label="项目名称" show-overflow-tooltip />
+        <el-table-column prop="projectStatus" label="项目状态" width="120">
           <template #default="{ row }">
-            <el-button type="primary" link @click="viewReceipt(row)">
-              查看票据
+            <el-tag :type="row.projectStatus === 1 ? 'success' : 'info'">
+              {{ row.projectStatus === 1 ? '进行中' : '已结束' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="订阅时间" width="180">
+           <template #default="{ row }">
+             {{ formatDate(row.createTime) }}
+           </template>
+        </el-table-column>
+        <el-table-column label="操作" width="180" align="center">
+          <template #default="{ row }">
+            <!-- 🌟 直接改造成捐赠按钮 -->
+            <el-button 
+              type="primary" 
+              link 
+              :disabled="row.projectStatus !== 1"
+              @click="openDonateDialog(row)"
+            >
+              去捐赠
+            </el-button>
+            <el-divider direction="vertical" />
+            <el-button type="danger" link @click="handleUnsubscribe(row.projectId)">
+              取消
             </el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
+    <!-- 🌟 引入全局统一的爱心捐赠对话框 -->
+    <el-dialog v-model="donateDialogVisible" title="爱心捐赠" width="420px" destroy-on-close>
+      <div v-if="selectedProject" class="donate-form">
+        <div class="donate-target-box">
+          <p class="donate-label">支持项目：</p>
+          <!-- 兼容推荐项目和订阅列表两种不同的字段名 -->
+          <p class="donate-value">{{ selectedProject.title || selectedProject.projectName }}</p>
+        </div>
+        
+        <el-form :model="donateForm" ref="donateFormRef" :rules="donateRules" label-position="top">
+          <el-form-item label="捐赠金额 (元)" prop="amount">
+            <el-input-number v-model="donateForm.amount" :precision="2" :step="10" :min="0.01" style="width: 100%" />
+            <div class="quick-amounts">
+              <el-tag v-for="a in [10, 50, 100, 500]" :key="a" @click="donateForm.amount = a" class="amount-tag">
+                ¥{{ a }}
+              </el-tag>
+            </div>
+          </el-form-item>
+          
+          <el-form-item label="您的姓名/昵称" prop="donorName">
+            <el-input v-model="donateForm.donorName" placeholder="请输入用于显示的名称" />
+          </el-form-item>
+          
+          <el-form-item label="爱心寄语">
+            <el-input v-model="donateForm.remark" type="textarea" :rows="2" placeholder="给受助者一点鼓励吧..." />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="donateDialogVisible = false">取消</el-button>
+          <el-button type="success" :loading="submitting" @click="submitDonation">确认支付</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-// 👇 注意这里：引入你需要用来获取数据的 API 方法
-import { getMyDonations, getDonorStatistic } from '@/api/donation' 
-import { getProjectList } from '@/api/project' // 假设你有专门管理项目的 API
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+// API
+import { getDonorStatistic, createDonation } from '@/api/donation' 
+import { getProjectList } from '@/api/project'
+import { getMySubscriptions, unsubscribeProject } from '@/api/subscription'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 1. 统计数据（初始化为 0）
+// 默认图片占位
+const DEFAULT_PLACEHOLDER = 'https://cube.elemecdn.com/e/fd/0fc7d20532fdaf769a25683617711png.png'
+
+// 1. 统计数据
 const stats = ref({
   totalAmount: 0,
   totalCount: 0,
   projectCount: 0
 })
 
-// 2. 推荐项目列表（初始化为空数组）
+// 2. 推荐项目
 const projectList = ref<any[]>([])
 const loadingProjects = ref(false)
 
-// 3. 捐赠记录
-const donationList = ref<any[]>([])
-const loadingDonations = ref(false)
+// 3. 订阅记录
+const loadingSubscriptions = ref(false)
+const subscriptionList = ref<any[]>([])
 
-// 跳转项目详情
-const goDetail = (id: number) => {
-  router.push(`/donor/project/${id}`)
+// 🌟 4. 捐赠弹窗相关状态
+const donateDialogVisible = ref(false)
+const submitting = ref(false)
+const selectedProject = ref<any>(null)
+const donateFormRef = ref()
+const donateForm = reactive({
+  amount: 10,
+  donorName: '',
+  remark: ''
+})
+
+const donateRules = {
+  amount: [{ required: true, message: '请输入捐赠金额', trigger: 'blur' }],
+  donorName: [{ required: true, message: '请输入显示名称', trigger: 'blur' }]
 }
 
-// 查看票据
-const viewReceipt = (row: any) => {
-  alert(`查看票据功能开发中：${row.projectName}`)
+// ======================= 弹窗操作方法 =======================
+
+// 打开捐赠弹窗 (无论是推荐项目还是订阅记录，都调用这个)
+const openDonateDialog = (project: any) => {
+  selectedProject.value = project
+  donateForm.amount = 10
+  donateForm.donorName = authStore.userInfo?.nickname || authStore.userInfo?.phone || ''
+  donateForm.remark = ''
+  donateDialogVisible.value = true
 }
 
-// ======================= 数据加载方法 =======================
+// 提交捐赠
+const submitDonation = async () => {
+  if (!donateFormRef.value) return
+  
+  await donateFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      try {
+        submitting.value = true
+        const donationData = {
+          // 兼容推荐卡片(id)和订阅列表(projectId)
+          projectId: selectedProject.value.id || selectedProject.value.projectId, 
+          userId: authStore.userInfo?.id,
+          donorName: donateForm.donorName,
+          donorPhone: authStore.userInfo?.phone,
+          amount: donateForm.amount,
+          remark: donateForm.remark,
+          source: 1,
+          payment: '模拟支付',
+          donationStatus: 1,
+          donorTime: new Date().toISOString()
+        }
 
-// 加载统计数据
+        const res: any = await createDonation(donationData)
+        if (res.code === 200) {
+          ElMessage.success('捐赠成功！感谢您的爱心支持 ❤️')
+          donateDialogVisible.value = false
+          // 捐赠成功后自动刷新统计数据
+          loadStats()
+        }
+      } catch (err: any) {
+        ElMessage.error(err.message || '捐赠失败，请稍后重试')
+      } finally {
+        submitting.value = false
+      }
+    }
+  })
+}
+
+// ======================= 数据加载与辅助方法 =======================
+
+const resolveImageUrl = (url: string | null) => {
+  if (!url) return DEFAULT_PLACEHOLDER
+  return url
+}
+
+const handleImageError = (e: Event) => {
+  const img = e.target as HTMLImageElement
+  img.onerror = null 
+  img.src = DEFAULT_PLACEHOLDER
+}
+
+const calculatePercent = (project: any) => {
+  if (!project.targetAmount || project.targetAmount === 0) return 0
+  const percent = Math.floor(((project.currentAmount || 0) / project.targetAmount) * 100)
+  return percent > 100 ? 100 : percent
+}
+
 const loadStats = async () => {
   try {
-    const userId = authStore.userInfo?.id // 根据 SQL，统计是用 user_id 查的
+    const userId = authStore.userInfo?.id 
     if (!userId) return
 
-    const res = await getDonorStatistic(userId)
+    const res: any = await getDonorStatistic(userId)
     if (res.code === 200 && res.data) {
       stats.value = {
         totalAmount: res.data.totalAmount || 0,
@@ -146,18 +300,15 @@ const loadStats = async () => {
   }
 }
 
-// 加载推荐项目 (只取前 3 个)
 const loadProjects = async () => {
   try {
     loadingProjects.value = true
-    // 假设你的 getProjectList 接受 page 和 size 参数
-    const res = await getProjectList({
+    const res: any = await getProjectList({
       page: 1,
       size: 3 // 首页只展示 3 个推荐
     })
     
     if (res.code === 200 && res.data) {
-      // 适配 MyBatis-Plus 的 Page 结构
       projectList.value = (res.data.records || [])
     }
   } catch (err) {
@@ -167,38 +318,53 @@ const loadProjects = async () => {
   }
 }
 
-// 加载捐赠记录
-const loadDonations = async () => {
+const loadSubscriptions = async () => {
+  const userId = authStore.userInfo?.id
+  if (!userId) return
+
+  loadingSubscriptions.value = true
   try {
-    loadingDonations.value = true
-    const phone = authStore.userInfo?.phone
-
-    if (!phone) {
-        console.error('用户未登录')
-        return
+    const res: any = await getMySubscriptions(userId)
+    if (res.code === 200) {
+      subscriptionList.value = res.data || []
     }
-    const res = await getMyDonations({
-      phone,
-      page: 1,
-      size: 5 // 首页展示最近的 5 条即可
-    })
-
-    if (res.code === 200 && res.data) {
-      donationList.value = res.data.records || [] // MyBatis-Plus 分页结构
-    }
-  } catch (err) {
-    console.error('加载捐赠记录失败', err)
+  } catch (error) {
+    ElMessage.error('加载订阅列表失败')
   } finally {
-    loadingDonations.value = false
+    loadingSubscriptions.value = false
   }
 }
 
-// 页面挂载时统一调用
+const handleUnsubscribe = async (projectId: number) => {
+  const userId = authStore.userInfo?.id
+  if (!userId) return
+
+  try {
+    await ElMessageBox.confirm('确定要取消订阅该公益项目吗？', '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    
+    const res: any = await unsubscribeProject(userId, projectId)
+    if (res.code === 200) {
+      ElMessage.success('已取消订阅')
+      loadSubscriptions() 
+    }
+  } catch (err) {
+  }
+}
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '--'
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 onMounted(() => {
-  // 因为带有 JWT token，现在可以安全并发请求这三个接口了
   loadStats()
   loadProjects()
-  loadDonations()
+  loadSubscriptions()
 })
 </script>
 
@@ -246,32 +412,56 @@ onMounted(() => {
 }
 
 .clickable-card {
-  cursor: pointer;
   transition: all 0.3s;
+  border-radius: 12px;
+  overflow: hidden;
+  border: none;
 }
 .clickable-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+.project-cover {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+.project-content {
+  padding: 15px;
 }
 
 .project-title {
-  margin-top: 0;
+  margin: 0 0 10px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 16px;
 }
 .desc {
   color: #666;
   margin: 10px 0;
-  height: 40px; /* 固定高度保持卡片整齐 */
+  height: 40px;
+  font-size: 13px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
-.amount {
-  margin-bottom: 10px;
-  color: #409eff;
-  font-weight: bold;
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #95a5a6;
+  margin-bottom: 6px;
 }
+
+/* 捐赠对话框样式 */
+.donate-target-box { background-color: #f0f9eb; border-left: 4px solid #67c23a; padding: 12px 16px; margin-bottom: 24px; border-radius: 4px; }
+.donate-label { font-size: 13px; color: #67c23a; margin-bottom: 4px; }
+.donate-value { font-weight: 600; color: #2c3e50; }
+.quick-amounts { display: flex; gap: 10px; margin-top: 8px; }
+.amount-tag { cursor: pointer; transition: all 0.2s; }
+.amount-tag:hover { background-color: #67c23a; color: white; border-color: #67c23a; }
 </style>

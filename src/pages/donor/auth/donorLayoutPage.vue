@@ -62,6 +62,11 @@
             <el-icon><Document /></el-icon>
             <span>我的捐赠</span>
           </el-menu-item>
+
+          <el-menu-item index="/donor/main/subscriptions">
+            <el-icon><Bell /></el-icon>
+            <span>我的订阅</span>
+          </el-menu-item>
         </el-menu>
       </div>
 
@@ -77,7 +82,7 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-  ArrowDown, User, SwitchButton, House, Goods, Document, Star,
+  ArrowDown, User, SwitchButton, House, Goods, Document, Bell,
   StarFilled
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'

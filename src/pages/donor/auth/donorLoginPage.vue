@@ -111,24 +111,32 @@ const handleLogin = async () => {
         phone: userData?.phone,
         avatar: userData?.avatar || '',
         userType: 'donor' as const,
-        loginTime: Date.now(),
-        userStatus: userData?.userStatus
+        loginTime: Date.now()
       }
       
+      // 🌟 核心修复区：在存入新身份前，彻底清空所有可能的历史残留状态！
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      localStorage.removeItem('isLoggedIn')
+      localStorage.removeItem('userType')
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('userInfo')
+      sessionStorage.removeItem('isLoggedIn')
+      sessionStorage.removeItem('userType')
+
       const storage = form.remember ? localStorage : sessionStorage
       storage.setItem('userInfo', JSON.stringify(userInfo))
       storage.setItem('isLoggedIn', 'true')
       storage.setItem('userType', 'donor')
       
-      // 修正：从 userData (即 response.data) 中获取 token
+      // ✅ 修正：从 userData (即 response.data) 中获取 token
       if (userData?.token) {
         storage.setItem('token', userData.token)
         console.log('Token 保存成功:', userData.token)
       } else {
         console.warn('后端没有返回 Token！')
       }
-      authStore.setToken(userData?.token)
-      authStore.setUserInfo(userInfo)
+      
       alert('登录成功')
       router.push('/donor/main')
     } else {

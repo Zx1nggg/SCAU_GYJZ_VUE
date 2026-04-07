@@ -18,15 +18,14 @@
               <span class="value">{{ authStore.userInfo?.phone || '未绑定' }}</span>
             </div>
             <div class="info-item">
-              <!-- 替换为数据库真实的 userStatus 字段判断 (1 为正常) -->
+              <span class="label">账号状态：</span>
               <el-tag :type="authStore.userInfo?.userStatus === 1 ? 'success' : 'danger'" size="small" effect="dark">
                 {{ authStore.userInfo?.userStatus === 1 ? '正常' : '异常' }}
               </el-tag>
             </div>
             <div class="info-item">
               <span class="label">注册时间：</span>
-              <!-- 如果后端User表有createTime可以在这里展示，暂用占位 -->
-              <span class="value text-gray">--</span>
+              <span class="value text-gray">{{ authStore.userInfo?.createTime }}</span>
             </div>
           </div>
 
@@ -99,12 +98,27 @@
     <!-- 修改个人信息弹窗 -->
     <el-dialog v-model="editDialogVisible" title="编辑个人资料" width="400px" destroy-on-close>
       <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="80px">
+        
+        <!-- 真正的图片上传组件 -->
+        <el-form-item label="用户头像" prop="avatar">
+          <el-upload
+            class="avatar-uploader"
+            action="#"
+            :show-file-list="false"
+            accept="image/jpeg,image/png,image/gif"
+            :before-upload="beforeImageUpload"
+            :http-request="uploadAvatar"
+          >
+            <img v-if="editForm.avatar" :src="editForm.avatar" class="avatar-preview" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+          <div class="upload-tip">点击上方方框上传新头像</div>
+        </el-form-item>
+
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="editForm.nickname" placeholder="请输入新昵称" maxlength="20" show-word-limit />
         </el-form-item>
-        <el-form-item label="头像地址" prop="avatar">
-          <el-input v-model="editForm.avatar" placeholder="请输入图片URL(选填)" />
-        </el-form-item>
+        
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -159,8 +173,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { getMyDonations } from '@/api/donation'
-// 注意：如果在api中没有updateUserInfo，需要您后续在后端补充更新接口
-// import { updateUserInfoApi } from '@/api/user' 
+import { updateUserInfo } from '@/api/auth'
+import { Plus } from '@element-plus/icons-vue' // 导入 Plus 图标
+import request from '@/utils/request'        // 导入请求工具，用于上传
 
 const authStore = useAuthStore()
 
@@ -228,25 +243,78 @@ const openEditDialog = () => {
   editDialogVisible.value = true
 }
 
+// 图片上传前置校验
+const beforeImageUpload = (file: File) => {
+  const isImage = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/gif'
+  const isLt1M = file.size / 1024 / 1024 < 1 // 建议维持 1MB，如后端已解封可调大
+
+  if (!isImage) {
+    ElMessage.error('只能上传 JPG、PNG 或 GIF 格式的图片！')
+    return false
+  }
+  if (!isLt1M) {
+    ElMessage.error('图片大小不能超过 1MB！')
+    return false
+  }
+  return true
+}
+
+// 真正发起上传请求的方法
+const uploadAvatar = async (options: any) => {
+  try {
+    const formData = new FormData()
+    formData.append('file', options.file)
+    
+    // 调用 /v1/upload/avatar 接口
+    const res: any = await request.post(`/v1/upload/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    
+    if (res.code === 200 && res.data) {
+      editForm.avatar = res.data
+      ElMessage.success('头像上传成功')
+    } else {
+      ElMessage.error(res.msg || '头像上传失败')
+    }
+  } catch (error) {
+    ElMessage.error('上传图片失败')
+  }
+}
+
+// 核心：保存修改信息
 const submitEdit = async () => {
+  const userId = authStore.userInfo?.id
+  if (!userId) {
+    ElMessage.error('登录异常，请重新登录')
+    return
+  }
+
   if (!editFormRef.value) return
   await editFormRef.value.validate(async (valid: boolean) => {
     if (valid) {
       try {
         submitting.value = true
-        // TODO: 这里需要对接后端的更新用户接口
-        // await updateUserInfoApi({ id: authStore.userInfo.id, ...editForm })
         
-        // 模拟接口请求成功后，直接更新前端 Pinia Store 的状态
-        authStore.updateUserInfo({
+        const res: any = await updateUserInfo(userId, {
           nickname: editForm.nickname,
           avatar: editForm.avatar
         })
         
-        ElMessage.success('个人资料更新成功')
-        editDialogVisible.value = false
+        if (res.code === 200) {
+          // 成功后同步更新本地 Store
+          authStore.updateUserInfo({
+            nickname: editForm.nickname,
+            avatar: editForm.avatar
+          })
+          ElMessage.success('档案更新成功')
+          editDialogVisible.value = false
+        } else {
+          ElMessage.error(res.msg || '更新失败')
+        }
       } catch (error) {
-        ElMessage.error('更新失败')
+        ElMessage.error('更新异常')
       } finally {
         submitting.value = false
       }
@@ -367,6 +435,39 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 🌟 头像上传组件样式 */
+.avatar-uploader :deep(.el-upload) {
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #fafafa;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.avatar-uploader :deep(.el-upload:hover) {
+  border-color: #FF7E5F;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 80px;
+  height: 80px;
+  text-align: center;
+  line-height: 80px;
+}
+.avatar-preview {
+  width: 80px;
+  height: 80px;
+  display: block;
+  object-fit: cover;
+}
+.upload-tip {
+  font-size: 12px;
+  color: #999;
+  margin-top: 6px;
+  line-height: 1.2;
 }
 
 /* 证书样式 */

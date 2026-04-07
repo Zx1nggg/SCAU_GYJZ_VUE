@@ -169,7 +169,7 @@ const loadTableData = async () => {
       params.endDate = dateRange.value[1]
     }
 
-    // 🌟 这里使用的是我们刚才精化的 getDonationList 接口
+    // 这里使用的是我们刚才精化的 getDonationList 接口
     const res: any = await getDonationList(params)
     if (res.code === 200 && res.data) {
       tableData.value = res.data.records
@@ -305,7 +305,7 @@ const handleFilterChange = () => {
   loadChartData()
 }
 
-// 🌟 原生前端导出纯净 CSV 功能，无需额外安装依赖
+// 原生前端导出纯净 CSV 功能 (防 Excel 科学计数法版)
 const exportToCSV = () => {
   if (tableData.value.length === 0) {
     ElMessage.warning('当前没有可导出的数据')
@@ -318,17 +318,27 @@ const exportToCSV = () => {
   // 2. 拼接表头
   csvContent += "捐赠单号,支持项目,捐赠人,手机号,捐赠金额,支付方式,捐赠时间\n"
   
-  // 3. 拼接数据行
+  // 3. 拼接数据行 (防 Excel 自动格式化)
   tableData.value.forEach(row => {
     let rowData = [
-      row.certificateNo,
-      `"${row.projectTitle || ''}"`, // 防项目名包含逗号导致错位
+      // 加上 \t，防止某些纯数字的单号被转换
+      `"${row.certificateNo}\t"`, 
+      
+      // 项目名防逗号错位
+      `"${row.projectTitle || ''}"`, 
+      
       row.donorName || '匿名',
-      row.donorPhone,
+      
+      // 修复：手机号加上 \t，强制 Excel 识别为纯文本，杜绝 1.74E+10
+      `"${row.donorPhone}\t"`, 
+      
       row.amount,
       row.payment,
-      formatDateTime(row.donationTime)
+      
+      // 修复：时间加上 \t，强制识别为文本，直接完整显示，杜绝 ####
+      `"${formatDateTime(row.donationTime)}\t"` 
     ].join(",")
+    
     csvContent += rowData + "\r\n"
   })
 

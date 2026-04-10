@@ -118,6 +118,7 @@ const routes = [
             name: 'UserManagement',
             component: () => import('../pages/sadmin/users/UserManagement.vue'),
             meta: { title: '用户管理' }
+            
         }
        ]
     }

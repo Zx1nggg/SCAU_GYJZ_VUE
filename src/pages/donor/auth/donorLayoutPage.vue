@@ -75,6 +75,8 @@
         <router-view />
       </div>
     </div>
+    <!-- 在最外层容器的底部挂载 AI 聊天助手 -->
+    <AiChatAssistant />
   </div>
 </template>
 <script setup lang="ts">
@@ -86,6 +88,7 @@ import {
   StarFilled
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import AiChatAssistant from '@/components/AiChatAssistant.vue'
 
 const router = useRouter()
 const route = useRoute()

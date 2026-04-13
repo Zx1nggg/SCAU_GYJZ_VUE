@@ -1,5 +1,35 @@
-# Vue 3 + TypeScript + Vite
+# 🎗️ 公益捐赠管理系统 - Web前端 (Public Welfare Donation Management System - Web Client)
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+一个透明、高效、易用的公益项目与捐赠记录管理平台前端解决方案。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 📖 项目简介
+
+本项目由华南农大组11开发，是“公益捐赠管理系统”的 Web 前端部分。系统基于现代化前端技术栈打造，不仅为普通捐赠者提供流畅、富有沉浸感的交互体验，同时也为平台管理员提供直观的数据可视化分析与业务管理后台，致力于全面提升公益活动的参与度与管理效率。
+
+## ✨ 核心功能
+
+* 📊 **数据可视化工作台**：直观展示项目募资进度、项目资金构成及近期捐赠趋势。
+* 🤖 **AI 智能客服助手**：内置二次元风格专属 AI 助手“小铃”，提供全天候业务咨询、捐赠引导与项目解答。（需本地部署一下自己的大模型，还没更新）
+* 🎁 **项目与捐赠中心**：流畅的公益项目浏览、检索体验，支持快捷发起捐赠并实时反馈进度。
+* 👥 **多角色权限控制**：完善的普通用户态与管理员态切换，涵盖用户审核、机构入驻管理及票据查询。
+
+## 🛠️ 技术栈
+
+* **核心框架**：Vue 3 (Composition API) 
+* **网络请求**：Axios (对接后端 RESTful API)
+* **AI Agent 集成**：支持对接大语言模型 (LLM) 与 Dify 平台接口
+* **代码管理**：Git (支持 GitHub / Gitee 双平台同步)
+
+## 🚀 快速开始
+
+### 1. 环境准备
+
+确保你的本地开发环境已安装以下工具：
+* [Node.js](https://nodejs.org/) (推荐版本 v18.0.0 或更高)
+* npm / yarn / pnpm (包管理器)
+
+### 2. 项目初始化
+
+克隆前端项目到本地并进入项目目录：
+```bash
+git clone https://github.com/Zx1nggg/SCAU_GYJZ_VUE.git

@@ -1,13 +1,11 @@
 <template>
   <div class="login-page">
     <div class="login-container">
-      <!-- 头部 -->
       <div class="login-header">
         <h2>管理员登录</h2>
         <p>管理系统，守护公益事业</p>
       </div>
 
-      <!-- 登录表单 -->
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label>管理员账号</label>
@@ -49,7 +47,6 @@
         </button>
       </form>
 
-      <!-- 注册链接 -->
       <div class="register-link">
         <p>
           还没有管理员账号？
@@ -57,7 +54,6 @@
         </p>
       </div>
       
-      <!-- 返回首页 -->
       <div class="back-link">
         <router-link to="/">返回首页</router-link>
       </div>
@@ -70,6 +66,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { adminLogin } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(false)
@@ -82,7 +79,6 @@ const form = reactive({
   remember: false
 })
 
-// 页面加载时读取记住的账号
 onMounted(() => {
   const savedUsername = localStorage.getItem('rememberAdminUsername')
   if (savedUsername) {
@@ -93,7 +89,7 @@ onMounted(() => {
 
 const handleLogin = async () => {
   if (!form.username || !form.password) {
-    alert('请填写账号和密码')
+    ElMessage.warning('请填写账号和密码')
     return
   }
   
@@ -106,24 +102,25 @@ const handleLogin = async () => {
     })
     
     if (response.code === 200) {
-      console.log('登录响应:', response)
+      console.log('管理员登录响应:', response)
       const userData = response.data
       
-      // 构建统一的用户信息对象
+      // 1. 构建完整的用户信息对象，补齐缺失字段
       const userInfo = {
         id: userData.id,
         username: userData.username,
         nickname: userData.nickname,
         role: userData.role,
         phone: userData.phone,
-        userStatus: userData?.userStatus,
         avatar: userData.avatar,
         orgId: userData.orgId,
+        userStatus: userData?.userStatus, // 🌟 补齐字段：账号状态
+        createTime: userData?.createTime, // 🌟 补齐字段：注册时间
         userType: 'admin',
-        displayName: userData.nickname
+        displayName: userData.nickname || userData.username
       }
       
-      // 🌟 核心修复区：在存入新身份前，彻底清空所有可能的历史残留状态！防死循环！
+      // 2. 彻底清理历史残留（防止 Token 污染）
       localStorage.removeItem('token')
       localStorage.removeItem('userInfo')
       localStorage.removeItem('isLoggedIn')
@@ -133,23 +130,20 @@ const handleLogin = async () => {
       sessionStorage.removeItem('isLoggedIn')
       sessionStorage.removeItem('userType')
       
-      // 根据是否勾选"记住密码"决定存到哪里
       const storage = form.remember ? localStorage : sessionStorage
       
+      // 3. 同步写入持久化存储与内存 Store
       if (userData.token) {
         storage.setItem('token', userData.token)
-        authStore.setToken(userData.token) // 更新 Pinia 状态
-      } else {
-        console.warn('后端没有返回 Token！')
+        authStore.setToken(userData.token) // 同步到 Pinia
       }
-      
+
       storage.setItem('userInfo', JSON.stringify(userInfo))
       storage.setItem('isLoggedIn', 'true')
       storage.setItem('userType', 'admin')
       
-      authStore.setUserInfo(userInfo) // 更新 Pinia 状态
+      authStore.setUserInfo(userInfo) // 同步到 Pinia
       
-      // 独立记住用户名（方便下次自动填入账号框）
       if (form.remember) {
         localStorage.setItem('rememberAdminUsername', form.username)
       } else {
@@ -157,19 +151,20 @@ const handleLogin = async () => {
       }
       
       const role = Number(userData.role)
+      // 4. 跳转逻辑
       if (role === 9) {
-        alert('登录成功，欢迎超级管理员')
-        router.push('/sadmin/main')
+        ElMessage.success('欢迎回来，超级管理员！')
+        router.push('/sadmin/main/super-dashboard')
       } else if (role === 2) {
-        alert('登录成功，欢迎公益机构管理员')
-        router.push('/admin/main')
+        ElMessage.success('登录成功，欢迎使用管理中心')
+        router.push('/admin/main/dashboard')
       }
     } else {
-      alert(response.message || '登录失败')
+      ElMessage.error(response.msg || '登录失败')
     }
   } catch (error) {
-    console.error('登录失败:', error)
-    alert('登录失败，请检查网络或账号密码')
+    console.error('登录异常:', error)
+    ElMessage.error('网络连接超时或服务器异常')
   } finally {
     loading.value = false
   }
@@ -177,7 +172,6 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* 样式与 donorLoginPage 相同，保持统一 */
 .login-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -369,20 +363,6 @@ const handleLogin = async () => {
 @media (max-width: 768px) {
   .login-container {
     padding: 32px 24px;
-  }
-  
-  .login-header h2 {
-    font-size: 28px;
-  }
-}
-
-@media (max-width: 480px) {
-  .login-container {
-    padding: 24px 20px;
-  }
-  
-  .login-header h2 {
-    font-size: 24px;
   }
 }
 </style>

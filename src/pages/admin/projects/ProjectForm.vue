@@ -183,7 +183,7 @@ const resetForm = () => {
     coverImage: '',
     startDate: '',
     endDate: '',
-    projectStatus: 0
+    projectStatus: 1
   })
   dateRange.value = []
   formRef.value?.clearValidate()

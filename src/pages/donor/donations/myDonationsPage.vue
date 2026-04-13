@@ -1,6 +1,5 @@
 <template>
   <div class="my-donations-container">
-    <!-- 顶部数据概览 -->
     <el-row :gutter="20" class="mb-4">
       <el-col :span="24">
         <el-card class="stat-card" shadow="hover">
@@ -39,16 +38,25 @@
       </el-col>
     </el-row>
 
-    <!-- 捐赠记录列表 -->
     <el-card class="box-card" shadow="hover">
       <template #header>
         <div class="card-header">
           <span class="header-title">📜 我的捐赠记录</span>
-          <el-button type="primary" plain size="small" @click="loadDonations">刷新记录</el-button>
+          
+          <div class="header-actions">
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索项目名称或凭证号..."
+              :prefix-icon="Search"
+              clearable
+              class="search-input"
+            />
+            <el-button type="primary" plain size="small" @click="loadDonations">刷新记录</el-button>
+          </div>
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="donationList" stripe style="width: 100%">
+      <el-table v-loading="loading" :data="filteredDonationList" stripe style="width: 100%">
         <el-table-column prop="certificateNo" label="凭证号" width="200" show-overflow-tooltip>
           <template #default="scope">
             <span class="font-mono text-gray-500">{{ scope.row.certificateNo || '--' }}</span>
@@ -83,15 +91,18 @@
             </el-button>
           </template>
         </el-table-column>
+        
+        <template #empty>
+          <el-empty :description="searchKeyword ? '未找到相关捐赠记录' : '暂无数据'" />
+        </template>
       </el-table>
 
-      <!-- 分页器 -->
       <div class="pagination-wrapper">
         <el-pagination
           v-model:current-page="queryParams.page"
           v-model:page-size="queryParams.size"
           :total="total"
-          :page-sizes="[10, 20, 50]"
+          :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
@@ -99,7 +110,6 @@
       </div>
     </el-card>
 
-    <!-- 荣誉证书弹窗 -->
     <el-dialog v-model="certDialogVisible" title="" width="550px" center destroy-on-close custom-class="cert-dialog">
       <div v-if="currentCert" class="certificate-wrapper" id="certificate-content">
         <div class="cert-border">
@@ -137,9 +147,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+// 🌟 1. 引入 computed 和 Search 图标
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Money, Star, DataBoard } from '@element-plus/icons-vue'
+import { Money, Star, DataBoard, Search } from '@element-plus/icons-vue' 
 import { useAuthStore } from '@/stores/auth'
 import { getMyDonations, getDonorStatistic } from '@/api/donation'
 
@@ -154,13 +165,30 @@ const queryParams = reactive({
   size: 10
 })
 
+// 🌟 2. 定义搜索关键词变量
+const searchKeyword = ref('')
+
+// 🌟 3. 使用 computed 实现丝滑前端过滤
+const filteredDonationList = computed(() => {
+  if (!searchKeyword.value) {
+    return donationList.value
+  }
+  const keyword = searchKeyword.value.toLowerCase()
+  return donationList.value.filter(item => {
+    // 支持按项目名称或凭证号进行模糊搜索
+    const matchProject = (item.projectName || '').toLowerCase().includes(keyword)
+    const matchCert = (item.certificateNo || '').toLowerCase().includes(keyword)
+    return matchProject || matchCert
+  })
+})
+
 const stats = ref({
   totalAmount: 0,
   totalCount: 0,
   projectCount: 0
 })
 
-// === 加载统计数据 ===
+// === 加载统计数据 (保持不变) ===
 const loadStats = async () => {
   const userId = authStore.userInfo?.id
   if (!userId) return
@@ -206,7 +234,7 @@ const handleCurrentChange = (val: number) => {
   loadDonations()
 }
 
-// === 证书逻辑 ===
+// === 证书逻辑与工具函数 (保持不变) ===
 const certDialogVisible = ref(false)
 const currentCert = ref<any>(null)
 
@@ -216,11 +244,9 @@ const viewCertificate = (row: any) => {
 }
 
 const downloadCert = () => {
-  // TODO: 后期可以引入 html2canvas 库实现一键截图下载
   ElMessage.success('请使用手机截屏或浏览器截图保存您的荣誉证书~')
 }
 
-// === 工具函数 ===
 const formatDate = (dateStr: string, format: string = 'YYYY-MM-DD HH:mm:ss') => {
   if (!dateStr) return '--'
   const d = new Date(dateStr)
@@ -245,176 +271,53 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 🌟 新增的样式：将输入框和刷新按钮平排 */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.search-input {
+  width: 250px;
+}
+
+/* ... 原有其他样式保持完全不变 ... */
 .my-donations-container {
   padding: 20px;
   background-color: #f5f7fa;
   min-height: calc(100vh - 60px);
 }
-
-.mb-4 {
-  margin-bottom: 20px;
-}
-
-.box-card {
-  border-radius: 12px;
-  border: none;
-}
-
-/* 顶部统计卡片样式 */
-.stat-card {
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(to right, #ffffff, #fafbfc);
-}
-.stat-content {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 10px 0;
-}
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-.stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-}
+.mb-4 { margin-bottom: 20px; }
+.box-card { border-radius: 12px; border: none; }
+.stat-card { border-radius: 12px; border: none; background: linear-gradient(to right, #ffffff, #fafbfc); }
+.stat-content { display: flex; justify-content: space-around; align-items: center; padding: 10px 0; }
+.stat-item { display: flex; align-items: center; gap: 15px; }
+.stat-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; }
 .amount-icon { background-color: #fef0f0; color: #f56c6c; }
 .count-icon { background-color: #ecf5ff; color: #409eff; }
 .project-icon { background-color: #f0f9eb; color: #67c23a; }
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.stat-title {
-  font-size: 14px;
-  color: #909399;
-}
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-}
+.stat-info { display: flex; flex-direction: column; gap: 5px; }
+.stat-title { font-size: 14px; color: #909399; }
+.stat-value { font-size: 24px; font-weight: bold; }
 .text-danger { color: #f56c6c; }
 .text-primary { color: #409eff; }
 .text-success { color: #67c23a; }
-.stat-divider {
-  width: 1px;
-  height: 40px;
-  background-color: #ebeef5;
-}
-
-/* 表格与内容样式 */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.header-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #303133;
-}
-.project-name {
-  font-weight: 500;
-  color: #409EFF;
-}
-.amount-text {
-  color: #F56C6C;
-  font-weight: bold;
-}
-.font-mono {
-  font-family: 'Courier New', Courier, monospace;
-}
+.stat-divider { width: 1px; height: 40px; background-color: #ebeef5; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.header-title { font-size: 18px; font-weight: bold; color: #303133; }
+.project-name { font-weight: 500; color: #409EFF; }
+.amount-text { color: #F56C6C; font-weight: bold; }
+.font-mono { font-family: 'Courier New', Courier, monospace; }
 .ml-2 { margin-left: 8px; }
-
-.pagination-wrapper {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* 证书样式 */
-.certificate-wrapper {
-  background-color: #fef8f5;
-  padding: 15px;
-  border-radius: 8px;
-}
-.cert-border {
-  border: 8px solid #d4af37;
-  padding: 4px;
-  border-radius: 4px;
-}
-.cert-inner {
-  border: 1px solid #d4af37;
-  padding: 30px 40px;
-  background-color: #fffaf0;
-  position: relative;
-  overflow: hidden;
-}
-.cert-title {
-  text-align: center;
-  font-size: 28px;
-  color: #c0392b;
-  letter-spacing: 5px;
-  margin-bottom: 30px;
-  font-family: 'STXingkai', 'KaiTi', serif;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-}
-.cert-body {
-  font-size: 16px;
-  line-height: 1.8;
-  color: #333;
-}
-.cert-amount {
-  font-size: 20px;
-  color: #c0392b;
-  font-weight: bold;
-}
-.cert-footer {
-  margin-top: 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  position: relative;
-}
-.cert-meta {
-  text-align: right;
-  font-size: 14px;
-  color: #555;
-  line-height: 1.6;
-}
-.cert-seal {
-  width: 100px;
-  height: 100px;
-  border: 4px solid #c0392b;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #c0392b;
-  font-weight: bold;
-  font-size: 12px;
-  text-align: center;
-  transform: rotate(-15deg);
-  opacity: 0.8;
-}
-.seal-ring {
-  width: 80px;
-  height: 80px;
-  border: 1px solid #c0392b;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-}
+.pagination-wrapper { margin-top: 20px; display: flex; justify-content: flex-end; }
+.certificate-wrapper { background-color: #fef8f5; padding: 15px; border-radius: 8px; }
+.cert-border { border: 8px solid #d4af37; padding: 4px; border-radius: 4px; }
+.cert-inner { border: 1px solid #d4af37; padding: 30px 40px; background-color: #fffaf0; position: relative; overflow: hidden; }
+.cert-title { text-align: center; font-size: 28px; color: #c0392b; letter-spacing: 5px; margin-bottom: 30px; font-family: 'STXingkai', 'KaiTi', serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+.cert-body { font-size: 16px; line-height: 1.8; color: #333; }
+.cert-amount { font-size: 20px; color: #c0392b; font-weight: bold; }
+.cert-footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; position: relative; }
+.cert-meta { text-align: right; font-size: 14px; color: #555; line-height: 1.6; }
+.cert-seal { width: 100px; height: 100px; border: 4px solid #c0392b; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #c0392b; font-weight: bold; font-size: 12px; text-align: center; transform: rotate(-15deg); opacity: 0.8; }
+.seal-ring { width: 80px; height: 80px; border: 1px solid #c0392b; border-radius: 50%; display: flex; justify-content: center; align-items: center; padding: 10px; }
 </style>

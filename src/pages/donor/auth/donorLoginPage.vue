@@ -111,6 +111,8 @@ const handleLogin = async () => {
         phone: userData?.phone,
         avatar: userData?.avatar || '',
         userType: 'donor' as const,
+         userStatus: userData?.userStatus, 
+        createTime: userData?.createTime,
         loginTime: Date.now()
       }
       
@@ -129,9 +131,16 @@ const handleLogin = async () => {
       storage.setItem('isLoggedIn', 'true')
       storage.setItem('userType', 'donor')
       
+      // 🌟 核心修复 1：拿到数据后，立刻同步更新 Pinia 内存中的用户信息！
+      authStore.setUserInfo(userInfo)
+
       // ✅ 修正：从 userData (即 response.data) 中获取 token
       if (userData?.token) {
         storage.setItem('token', userData.token)
+        
+        // 🌟 核心修复 2：同步更新 Pinia 内存中的 Token！
+        authStore.setToken(userData.token)
+        
         console.log('Token 保存成功:', userData.token)
       } else {
         console.warn('后端没有返回 Token！')

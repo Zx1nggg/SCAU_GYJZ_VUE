@@ -35,7 +35,7 @@
         <el-card class="stats-card" shadow="hover">
           <div class="stats-content">
             <div class="stats-info">
-              <div class="stats-number">{{ stats.totalDonations }}</div>
+              <div class="stats-number">{{ stats.totalDonationCount }}</div>
               <div class="stats-label">捐赠总笔数</div>
             </div>
             <div class="stats-icon" style="background: #67c23a20; color: #67c23a">
@@ -117,31 +117,6 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <!-- 待处理事项 -->
-    <el-card class="pending-card">
-      <template #header>
-        <div class="card-header">
-          <span>待处理事项</span>
-          <el-button type="primary" link>处理全部</el-button>
-        </div>
-      </template>
-      <el-table :data="pendingTasks" style="width: 100%">
-        <el-table-column prop="type" label="类型" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.tagType">{{ row.type }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="title" label="标题" />
-        <el-table-column prop="createTime" label="提交时间" width="180" />
-        <el-table-column label="操作" width="150">
-          <template #default="{ row }">
-            <el-button type="primary" link size="small">处理</el-button>
-            <el-button type="danger" link size="small">拒绝</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
   </div>
 </template>
 
@@ -169,7 +144,7 @@ updateDate()
 // 统计数据
 const stats = ref({
   totalProjects: 0,
-  totalDonations: 0,
+  totalDonationCount: 0,
   totalAmount: '',
   totalUsers: 0
 })
@@ -186,7 +161,7 @@ const loadOrgStats = async () => {
       stats.value.totalProjects = data.totalProjectCount
       stats.value.totalAmount = data.totalAmount.toLocaleString() 
       stats.value.totalUsers = data.totalDonorCount
-      stats.value.totalDonations = data.totalProjectCount // 若后端支持总笔数可替换
+      stats.value.totalDonationCount = data.totalDonationCount
     }
   } catch (err) {
     console.error('加载机构统计失败', err)

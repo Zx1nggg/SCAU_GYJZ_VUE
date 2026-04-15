@@ -9,11 +9,16 @@ export const getOrgApplications = (params: any) => {
 
 /**
  * 审核机构入驻申请
- * @param id 机构ID
- * @param data status: 1-通过, 2-驳回; auditRemark: 审核备注
  */
-export const auditOrgApplication = (id: number, data: { status: number; auditRemark?: string }) => {
-  return request.put(`/v1/sadmin/organizations/${id}/audit`, data)
+export const auditOrgApplication = (applyId: number, data: { status: number; auditRemark?: string; auditorId?: number }) => {
+  // 组装后端需要的完整 JSON 结构
+  const payload = {
+    applyId: applyId,
+    status: data.status,
+    auditRemark: data.auditRemark,
+    auditorId: data.auditorId // 如果你的系统里有当前审核人的 ID，可以在调用时传进来
+  };
+  return request.post(`/v1/sadmin/registerApply/audit`, payload);
 }
 
 /**

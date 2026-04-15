@@ -70,6 +70,7 @@
           <el-descriptions-item label="机构简介" :span="2">
             <div style="white-space: pre-wrap; line-height: 1.5;">{{ currentApp.content || '无' }}</div>
           </el-descriptions-item>
+          <el-descriptions-item label="资质文件" :span="2">{{ currentApp.qualification || '未提供' }}</el-descriptions-item>
         </el-descriptions>
 
         <!-- 审核操作区 (仅待审核状态显示) -->

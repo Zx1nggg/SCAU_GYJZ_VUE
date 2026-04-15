@@ -9,9 +9,6 @@
         </div>
       </div>
       <div class="header-right">
-        <el-badge :value="notificationCount" :hidden="notificationCount === 0">
-          <el-button :icon="Bell" circle @click="showNotifications" />
-        </el-badge>
         <el-dropdown @command="handleCommand">
           <div class="user-info">
             <el-avatar :src="authStore.userAvatar || defaultAvatar" :size="40" />
@@ -121,10 +118,6 @@ const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726
 // 当前激活的菜单项
 const activeMenu = computed(() => route.path)
 
-// 显示通知
-const showNotifications = () => {
-  ElMessage.info('您有3条未读通知')
-}
 
 // 处理下拉菜单
 const handleCommand = (command: string) => {

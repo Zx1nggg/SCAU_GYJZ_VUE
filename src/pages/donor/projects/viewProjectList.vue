@@ -126,7 +126,24 @@
           </el-tag>
         </div>
         
-        <div class="detail-progress">
+        <!-- 新增：项目周期与机构名称区块 -->
+        <div style="margin-top: 15px; font-size: 14px; color: #606266; background-color: #f5f7fa; padding: 12px; border-radius: 8px; line-height: 1.8;">
+          <div>
+            <span style="font-weight: bold; color: #909399;">发起机构：</span>
+            <span>{{ currentDetailProject.orgName || '公益组织' }}</span>
+          </div>
+          <div>
+            <span style="font-weight: bold; color: #909399;">项目周期：</span>
+            <!-- 使用 substring(0,10) 截取日期部分，过滤掉 T00:00:00 -->
+            <span>
+              {{ currentDetailProject.startDate ? currentDetailProject.startDate.substring(0, 10) : '未知' }} 
+              至 
+              {{ currentDetailProject.endDate ? currentDetailProject.endDate.substring(0, 10) : '未知' }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="detail-progress" style="margin-top: 15px;">
           <div class="progress-info">
             <span>捐赠进度：{{ calculatePercent(currentDetailProject) }}%</span>
             <span>目标金额：¥{{ currentDetailProject.targetAmount }}</span>

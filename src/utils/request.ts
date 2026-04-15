@@ -10,11 +10,9 @@ const request: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json'
   }
-  // 如果完全切换到了 JWT，这里其实可以把 withCredentials: true 删掉，
-  // 因为不再依赖 cookie 了。保留也不会报错，但删掉更符合 JWT 的规范。
 })
 
-// 核心修改：请求拦截器
+// 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 1. 因为 Login.vue 中支持“记住我”，所以要在 localStorage 和 sessionStorage 里都找一下
@@ -35,7 +33,7 @@ request.interceptors.request.use(
   }
 )
 
-// 响应拦截器 (保持你原来的逻辑基本不变)
+// 响应拦截器 (保持原来的逻辑基本不变)
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     return response.data
@@ -62,7 +60,7 @@ request.interceptors.response.use(
           authStore.logout()
           
           setTimeout(() => {
-            window.location.href = '/login' // 或者使用 router.push
+            window.location.href = '/' // 或者使用 router.push，返回主页
           }, 1500)
           break
         case 403:

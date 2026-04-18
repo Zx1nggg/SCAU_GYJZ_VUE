@@ -81,7 +81,6 @@
           <template #header>
             <div class="card-header">
               <span>捐赠趋势（近7天）</span>
-              <el-button type="primary" link>查看更多</el-button>
             </div>
           </template>
           <div ref="chartRef" class="chart-container"></div>

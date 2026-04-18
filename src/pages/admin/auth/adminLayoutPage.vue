@@ -151,15 +151,21 @@ const executeLogout = () => {
     // 1. 清除 Pinia 里的状态 (直接置空)
     authStore.token = ''
     authStore.userInfo = null
-    // 或者直接调用 authStore 里的退出方法：authStore.logoutAction()
     
-    // 2. 清除本地存储 (如果有的话)
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUserInfo')
+    // 2. 清除本地存储
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('admin_userInfo')
+    localStorage.removeItem('admin_isLoggedIn')
+    localStorage.removeItem('admin_userType')
+
+    sessionStorage.removeItem('admin_token')
+    sessionStorage.removeItem('admin_userInfo')
+    sessionStorage.removeItem('admin_isLoggedIn')
+    sessionStorage.removeItem('admin_userType')
 
     // 3. 提示并跳转
     ElMessage.success('已安全退出系统')
-    router.push('/adminLogin') // 注意改成你实际的登录路由路径
+    router.push('/adminLogin') // 实际的登录路由路径
     
   }).catch(() => {
     // 用户点击取消，不执行任何操作

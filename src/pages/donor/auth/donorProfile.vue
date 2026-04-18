@@ -154,7 +154,7 @@
               </div>
               <div class="cert-meta">
                 <p>凭证编号：{{ currentCert.certificateNo }}</p>
-                <p>发证机构：XX公益平台组委会</p>
+                <p>发证机构：SCAU公益平台组委会</p>
                 <p>发证日期：{{ formatDate(currentCert.donationTime, 'YYYY年MM月DD日') }}</p>
               </div>
             </div>
@@ -172,7 +172,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
-import { getMyDonations } from '@/api/donation'
+import { getMyDonations, type Donation } from '@/api/donation'
 import { updateUserInfo } from '@/api/auth'
 import { Plus } from '@element-plus/icons-vue' // 导入 Plus 图标
 import request from '@/utils/request'        // 导入请求工具，用于上传
@@ -182,7 +182,7 @@ const authStore = useAuthStore()
 // === 基础数据 ===
 const activeTab = ref('history')
 const loading = ref(false)
-const donationList = ref<any[]>([])
+const donationList = ref<Donation[]>([])
 const total = ref(0)
 const queryParams = reactive({
   page: 1,
@@ -246,7 +246,7 @@ const openEditDialog = () => {
 // 图片上传前置校验
 const beforeImageUpload = (file: File) => {
   const isImage = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/gif'
-  const isLt1M = file.size / 1024 / 1024 < 1 // 建议维持 1MB，如后端已解封可调大
+  const isLt1M = file.size / 1024 / 1024 < 1 
 
   if (!isImage) {
     ElMessage.error('只能上传 JPG、PNG 或 GIF 格式的图片！')

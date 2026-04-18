@@ -157,7 +157,7 @@ const sendCode = async () => {
       alert(`验证码已发送至 ${form.phone}`)
       
       // 开始倒计时
-      codeCountdown.value = 60
+      codeCountdown.value = 120
       const timer = setInterval(() => {
         codeCountdown.value--
         if (codeCountdown.value <= 0) {
@@ -165,7 +165,7 @@ const sendCode = async () => {
         }
       }, 1000)
     } else {
-      alert(response.message || '发送失败')
+      alert(response.msg || '发送失败')
     }
   } catch (error) {
     console.error('发送验证码失败:', error)
@@ -231,7 +231,7 @@ const handleRegister = async () => {
       alert('注册成功！请登录')
       router.push('/donorLogin')
     } else {
-      alert(response.message || '注册失败')
+      alert(response.msg || '注册失败')
     }
   } catch (error) {
     console.error('注册失败:', error)

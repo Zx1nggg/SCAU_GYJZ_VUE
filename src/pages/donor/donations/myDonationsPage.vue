@@ -147,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-// 🌟 1. 引入 computed 和 Search 图标
+// 1. 引入 computed 和 Search 图标
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Money, Star, DataBoard, Search } from '@element-plus/icons-vue' 
@@ -165,10 +165,10 @@ const queryParams = reactive({
   size: 10
 })
 
-// 🌟 2. 定义搜索关键词变量
+// 2. 定义搜索关键词变量
 const searchKeyword = ref('')
 
-// 🌟 3. 使用 computed 实现丝滑前端过滤
+// 3. 使用 computed 实现前端过滤
 const filteredDonationList = computed(() => {
   if (!searchKeyword.value) {
     return donationList.value
@@ -188,7 +188,7 @@ const stats = ref({
   projectCount: 0
 })
 
-// === 加载统计数据 (保持不变) ===
+// === 加载统计数据 ===
 const loadStats = async () => {
   const userId = authStore.userInfo?.id
   if (!userId) return
@@ -234,7 +234,7 @@ const handleCurrentChange = (val: number) => {
   loadDonations()
 }
 
-// === 证书逻辑与工具函数 (保持不变) ===
+// === 证书逻辑与工具函数 ===
 const certDialogVisible = ref(false)
 const currentCert = ref<any>(null)
 
@@ -271,7 +271,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 🌟 新增的样式：将输入框和刷新按钮平排 */
+/* 新增的样式：将输入框和刷新按钮平排 */
 .header-actions {
   display: flex;
   align-items: center;
@@ -280,8 +280,6 @@ onMounted(() => {
 .search-input {
   width: 250px;
 }
-
-/* ... 原有其他样式保持完全不变 ... */
 .my-donations-container {
   padding: 20px;
   background-color: #f5f7fa;

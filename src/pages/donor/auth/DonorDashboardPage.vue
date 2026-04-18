@@ -57,8 +57,8 @@
               @error="handleImageError"
             >
             <div class="project-content">
-              <h3 class="project-title">{{ project.name || project.title }}</h3>
-              <p class="desc">{{ project.content || project.description || '暂无简介' }}</p>
+              <h3 class="project-title">{{ project.title }}</h3>
+              <p class="desc">{{ project.content || '暂无简介' }}</p>
               <div class="progress-info">
                 <span>进度：{{ calculatePercent(project) }}%</span>
                 <span>目标：¥{{ project.targetAmount || 0 }}</span>
@@ -109,7 +109,7 @@
         </el-table-column>
         <el-table-column label="操作" width="180" align="center">
           <template #default="{ row }">
-            <!-- 🌟 直接改造成捐赠按钮 -->
+            <!-- 捐赠按钮 -->
             <el-button 
               type="primary" 
               link 
@@ -127,13 +127,13 @@
       </el-table>
     </el-card>
 
-    <!-- 🌟 引入全局统一的爱心捐赠对话框 -->
+    <!-- 引入全局统一的爱心捐赠对话框 -->
     <el-dialog v-model="donateDialogVisible" title="爱心捐赠" width="420px" destroy-on-close>
       <div v-if="selectedProject" class="donate-form">
         <div class="donate-target-box">
           <p class="donate-label">支持项目：</p>
           <!-- 兼容推荐项目和订阅列表两种不同的字段名 -->
-          <p class="donate-value">{{ selectedProject.title || selectedProject.projectName }}</p>
+          <p class="donate-value">{{ selectedProject.title || selectedProject.projectTitle }}</p>
         </div>
         
         <el-form :model="donateForm" ref="donateFormRef" :rules="donateRules" label-position="top">
@@ -171,11 +171,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
-
 // API
 import { getDonorStatistic, createDonation } from '@/api/donation' 
-import { getProjectList } from '@/api/project'
-import { getMySubscriptions, unsubscribeProject } from '@/api/subscription'
+import { getProjectList,type Project } from '@/api/project'
+import { getMySubscriptions, unsubscribeProject, type Subscription } from '@/api/subscription'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -191,14 +190,14 @@ const stats = ref({
 })
 
 // 2. 推荐项目
-const projectList = ref<any[]>([])
+const projectList = ref<Project[]>([])
 const loadingProjects = ref(false)
 
 // 3. 订阅记录
 const loadingSubscriptions = ref(false)
-const subscriptionList = ref<any[]>([])
+const subscriptionList = ref<Subscription[]>([])
 
-// 🌟 4. 捐赠弹窗相关状态
+// 4. 捐赠弹窗相关状态
 const donateDialogVisible = ref(false)
 const submitting = ref(false)
 const selectedProject = ref<any>(null)
@@ -235,7 +234,7 @@ const submitDonation = async () => {
         submitting.value = true
         const donationData = {
           // 兼容推荐卡片(id)和订阅列表(projectId)
-          projectId: selectedProject.value.id || selectedProject.value.projectId, 
+          projectId: selectedProject.value.projectId || selectedProject.value.id, 
           userId: authStore.userInfo?.id,
           donorName: donateForm.donorName,
           donorPhone: authStore.userInfo?.phone,
@@ -265,7 +264,7 @@ const submitDonation = async () => {
 
 // ======================= 数据加载与辅助方法 =======================
 
-const resolveImageUrl = (url: string | null) => {
+const resolveImageUrl = (url: string | undefined) => {
   if (!url) return DEFAULT_PLACEHOLDER
   return url
 }

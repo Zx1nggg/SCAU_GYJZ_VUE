@@ -15,8 +15,10 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 1. 因为 Login.vue 中支持“记住我”，所以要在 localStorage 和 sessionStorage 里都找一下
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    // 根据当前页面的url来匹配是admin还是donor
+    const isUrlAdmin = window.location.pathname.includes('admin') || window.location.hash.includes('admin') || window.location.pathname.includes('Admin')
+    const prefix = isUrlAdmin ? 'admin_' : 'donor_'
+    const token = localStorage.getItem(`${prefix}token`) || sessionStorage.getItem(`${prefix}token`)
 
     // 2. 如果找到了 token，就按照 JWT 标准加入到请求头的 Authorization 中
     if (token) {
@@ -46,15 +48,19 @@ request.interceptors.response.use(
         case 401:
           // 后端 JwtAuthenticationFilter 校验失败（比如 Token 过期或没传）会返回 401
           ElMessage.error('登录已过期，请重新登录')
+          // 判断当前环境
+          const isUrlAdmin = window.location.pathname.includes('admin') || window.location.hash.includes('admin')
+          const prefix = isUrlAdmin ? 'admin_' : 'donor_'
           // 清除本地缓存的所有信息
-          localStorage.removeItem('token')
-          localStorage.removeItem('userInfo')
-          localStorage.removeItem('isLoggedIn')
-          localStorage.removeItem('userType')
-          sessionStorage.removeItem('token')
-          sessionStorage.removeItem('userInfo')
-          sessionStorage.removeItem('isLoggedIn')
-          sessionStorage.removeItem('userType')
+          localStorage.removeItem(`${prefix}token`)
+          localStorage.removeItem(`${prefix}userInfo`)
+          localStorage.removeItem(`${prefix}isLoggedIn`)
+          localStorage.removeItem(`${prefix}userType`)
+          
+          sessionStorage.removeItem(`${prefix}token`)
+          sessionStorage.removeItem(`${prefix}userInfo`)
+          sessionStorage.removeItem(`${prefix}isLoggedIn`)
+          sessionStorage.removeItem(`${prefix}userType`)
           
           const authStore = useAuthStore()
           authStore.logout()

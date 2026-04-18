@@ -67,6 +67,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { donorLogin, type User } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth' // 引入 authStore
+import { onMounted } from 'vue'
 
 const authStore = useAuthStore() // 实例化
 const router = useRouter()
@@ -77,6 +78,19 @@ const form = reactive({
   phone: '',
   password: '',
   remember: false
+})
+
+// 页面加载时去localstorage找看之前有没有保存的手机号和密码，如果有就自动填充到表单里
+onMounted(() => {
+  const savedPhone = localStorage.getItem('donor_saved_phone')
+  const savedPassword = localStorage.getItem('donor_saved_password')
+  
+  if (savedPhone && savedPassword) {
+    // 如果找到了，直接赋值给表单绑定的变量，页面上瞬间就填好了！
+    form.phone = savedPhone
+    form.password = savedPassword
+    form.remember = true // 顺便把“记住密码”的框也自动勾上
+  }
 })
 
 const handleLogin = async () => {
@@ -111,39 +125,48 @@ const handleLogin = async () => {
         phone: userData?.phone,
         avatar: userData?.avatar || '',
         userType: 'donor' as const,
-         userStatus: userData?.userStatus, 
+        userStatus: userData?.userStatus, 
         createTime: userData?.createTime,
         loginTime: Date.now()
       }
       
-      // 🌟 核心修复区：在存入新身份前，彻底清空所有可能的历史残留状态！
-      localStorage.removeItem('token')
-      localStorage.removeItem('userInfo')
-      localStorage.removeItem('isLoggedIn')
-      localStorage.removeItem('userType')
-      sessionStorage.removeItem('token')
-      sessionStorage.removeItem('userInfo')
-      sessionStorage.removeItem('isLoggedIn')
-      sessionStorage.removeItem('userType')
+      // 在存入新身份前，彻底清空所有可能的历史残留状态！
+      localStorage.removeItem('donor_token')
+      localStorage.removeItem('donor_userInfo')
+      localStorage.removeItem('donor_isLoggedIn')
+      localStorage.removeItem('donor_userType')
+      sessionStorage.removeItem('donor_token')
+      sessionStorage.removeItem('donor_userInfo')
+      sessionStorage.removeItem('donor_isLoggedIn')
+      sessionStorage.removeItem('donor_userType')
 
       const storage = form.remember ? localStorage : sessionStorage
-      storage.setItem('userInfo', JSON.stringify(userInfo))
-      storage.setItem('isLoggedIn', 'true')
-      storage.setItem('userType', 'donor')
-      
-      // 🌟 核心修复 1：拿到数据后，立刻同步更新 Pinia 内存中的用户信息！
+      storage.setItem('donor_userInfo', JSON.stringify(userInfo))
+      storage.setItem('donor_isLoggedIn', 'true')
+      storage.setItem('donor_userType', 'donor')
+
+      // 1：拿到数据后，立刻同步更新 Pinia 内存中的用户信息！
       authStore.setUserInfo(userInfo)
 
-      // ✅ 修正：从 userData (即 response.data) 中获取 token
+      // 从 userData (即 response.data) 中获取 token
       if (userData?.token) {
-        storage.setItem('token', userData.token)
+        storage.setItem('donor_token', userData.token)
         
-        // 🌟 核心修复 2：同步更新 Pinia 内存中的 Token！
+        // 2：同步更新 Pinia 内存中的 Token！
         authStore.setToken(userData.token)
         
         console.log('Token 保存成功:', userData.token)
       } else {
         console.warn('后端没有返回 Token！')
+      }
+      if (form.remember) {
+        // 如果勾选了记住密码，把密码存到本地
+        localStorage.setItem('donor_saved_phone', form.phone)
+        localStorage.setItem('donor_saved_password', form.password)
+      } else {
+        // 如果没勾选，一定要清除掉
+        localStorage.removeItem('donor_saved_phone')
+        localStorage.removeItem('donor_saved_password')
       }
       
       alert('登录成功')

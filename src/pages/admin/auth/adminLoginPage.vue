@@ -80,10 +80,14 @@ const form = reactive({
 })
 
 onMounted(() => {
-  const savedUsername = localStorage.getItem('rememberAdminUsername')
-  if (savedUsername) {
+  const savedUsername = localStorage.getItem('admin_rememberUsername')
+  const savedPassword = localStorage.getItem('admin_saved_password')
+  
+  if (savedUsername && savedPassword) {
+    // 如果找到了，直接赋值给表单绑定的变量，页面上瞬间就填好了！
     form.username = savedUsername
-    form.remember = true
+    form.password = savedPassword
+    form.remember = true // 顺便把“记住密码”的框也自动勾上
   }
 })
 
@@ -114,40 +118,44 @@ const handleLogin = async () => {
         phone: userData.phone,
         avatar: userData.avatar,
         orgId: userData.orgId,
-        userStatus: userData?.userStatus, // 🌟 补齐字段：账号状态
-        createTime: userData?.createTime, // 🌟 补齐字段：注册时间
+        userStatus: userData?.userStatus, 
+        createTime: userData?.createTime, 
         userType: 'admin',
         displayName: userData.nickname || userData.username
       }
       
       // 2. 彻底清理历史残留（防止 Token 污染）
-      localStorage.removeItem('token')
-      localStorage.removeItem('userInfo')
-      localStorage.removeItem('isLoggedIn')
-      localStorage.removeItem('userType')
-      sessionStorage.removeItem('token')
-      sessionStorage.removeItem('userInfo')
-      sessionStorage.removeItem('isLoggedIn')
-      sessionStorage.removeItem('userType')
+      localStorage.removeItem('admin_token')
+      localStorage.removeItem('admin_userInfo')
+      localStorage.removeItem('admin_isLoggedIn')
+      localStorage.removeItem('admin_userType')
+      sessionStorage.removeItem('admin_token')
+      sessionStorage.removeItem('admin_userInfo')
+      sessionStorage.removeItem('admin_isLoggedIn')
+      sessionStorage.removeItem('admin_userType')
       
       const storage = form.remember ? localStorage : sessionStorage
       
       // 3. 同步写入持久化存储与内存 Store
       if (userData.token) {
-        storage.setItem('token', userData.token)
+        storage.setItem('admin_token', userData.token)
         authStore.setToken(userData.token) // 同步到 Pinia
       }
 
-      storage.setItem('userInfo', JSON.stringify(userInfo))
-      storage.setItem('isLoggedIn', 'true')
-      storage.setItem('userType', 'admin')
+      storage.setItem('admin_userInfo', JSON.stringify(userInfo))
+      storage.setItem('admin_isLoggedIn', 'true')
+      storage.setItem('admin_userType', 'admin')
       
       authStore.setUserInfo(userInfo) // 同步到 Pinia
       
       if (form.remember) {
-        localStorage.setItem('rememberAdminUsername', form.username)
+        // 如果勾选了记住密码，把账号密码存到本地
+        localStorage.setItem('admin_rememberUsername', form.username)
+        localStorage.setItem('admin_saved_password', form.password)
       } else {
-        localStorage.removeItem('rememberAdminUsername')
+        // 如果没勾选，一定要清除掉，保护隐私
+        localStorage.removeItem('admin_rememberUsername')
+        localStorage.removeItem('admin_saved_password')
       }
       
       const role = Number(userData.role)

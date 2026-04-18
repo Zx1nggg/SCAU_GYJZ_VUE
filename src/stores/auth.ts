@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import request from '@/utils/request' // 引入我们刚刚配置好的带 Token 拦截器的 axios
+import request from '@/utils/request' // 引入配置好的带 Token 拦截器的 axios
 
 // 用户信息接口 - 匹配后端 User 实体
 export interface UserInfo {
@@ -87,8 +87,6 @@ export const useAuthStore = defineStore('auth', () => {
   // 退出登录
   const logout = async () => {
     try {
-      // 告诉后端我们要退出了 (如果你后端没有专门处理登出的逻辑，这步其实可以省去，因为JWT是无状态的)
-      // await request.post('/v1/logout') 
     } catch (error) {
       console.error('登出请求失败:', error)
     } finally {

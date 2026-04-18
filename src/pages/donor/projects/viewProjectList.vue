@@ -5,10 +5,12 @@
       <el-form :inline="true" :model="queryParams" class="filter-form">
         <el-form-item label="项目分类">
           <el-select v-model="queryParams.category" placeholder="全部" clearable @change="handleQuery" style="width: 150px">
-            <el-option label="助学" value="助学" />
-            <el-option label="助老" value="助老" />
-            <el-option label="环保" value="环保" />
-            <el-option label="医疗" value="医疗" />
+            <el-option label="教育助学" value="教育助学" />
+            <el-option label="社区发展" value="社区发展" />
+            <el-option label="环境保护" value="环境保护" />
+            <el-option label="医疗救助" value="医疗救助" />
+            <el-option label="灾害救援" value="灾害救援" />
+            <el-option label="动物保护" value="动物保护" />
           </el-select>
         </el-form-item>
         <el-form-item label="关键词">
@@ -78,7 +80,7 @@
               <div class="project-footer">
                 <span class="current-amount">已筹：¥{{ project.currentAmount || 0 }}</span>
                 <div class="footer-actions">
-                  <!-- 🌟 查看详情按钮：打开弹窗 -->
+                  <!-- 查看详情按钮：打开弹窗 -->
                   <el-button type="primary" link @click="openDetailDialog(project)">
                     查看详情
                   </el-button>
@@ -126,7 +128,7 @@
           </el-tag>
         </div>
         
-        <!-- 新增：项目周期与机构名称区块 -->
+        <!-- 项目周期与机构名称区块 -->
         <div style="margin-top: 15px; font-size: 14px; color: #606266; background-color: #f5f7fa; padding: 12px; border-radius: 8px; line-height: 1.8;">
           <div>
             <span style="font-weight: bold; color: #909399;">发起机构：</span>

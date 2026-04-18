@@ -392,7 +392,7 @@ const handleUpdatePassword = async () => {
   }
 }
 
-// 🌟 图片上传前置校验钩子，将过大的 PNG 拦截在前端
+// 图片上传前置校验钩子，将过大的 PNG 拦截在前端
 const beforeImageUpload = (file: File) => {
   const isImage = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/gif'
   // Spring Boot 默认限制 1MB。
@@ -403,7 +403,7 @@ const beforeImageUpload = (file: File) => {
     return false
   }
   if (!isLt1M) {
-    ElMessage.error('图片大小不能超过 5MB！')
+    ElMessage.error('图片大小不能超过 1MB！')
     return false
   }
   return true

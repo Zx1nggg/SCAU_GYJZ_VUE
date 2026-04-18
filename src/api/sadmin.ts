@@ -16,7 +16,7 @@ export const auditOrgApplication = (applyId: number, data: { status: number; aud
     applyId: applyId,
     status: data.status,
     auditRemark: data.auditRemark,
-    auditorId: data.auditorId // 如果你的系统里有当前审核人的 ID，可以在调用时传进来
+    auditorId: data.auditorId // 如果系统里有当前审核人的 ID，可以在调用时传进来
   };
   return request.post(`/v1/sadmin/registerApply/audit`, payload);
 }

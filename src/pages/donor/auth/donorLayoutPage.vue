@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessageBox,ElMessage } from 'element-plus'
 import {
   ArrowDown, User, SwitchButton, House, Goods, Document, Bell,
   StarFilled
@@ -109,12 +109,49 @@ const handleCommand = async (command: string) => {
       router.push('/donor/main/records')
       break
     case 'logout':
-      await authStore.logout()
-      ElMessage.success('已退出登录')
-      router.push('/donorLogin')
+      executeLogout()
       break
   }
 }
+
+const executeLogout = () => {
+  ElMessageBox.confirm(
+    '确定要退出当前账号吗？',
+    '退出提示',
+    {
+      confirmButtonText: '安全退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    const authStore = useAuthStore()
+    
+    // 1. 清除 Pinia 里的状态
+    authStore.token = ''
+    authStore.userInfo = null
+  
+    // 2. 精准清除捐赠人专属的登录状态。不要碰 donor_saved_password 和 admin_ 的数据
+    localStorage.removeItem('donor_token')
+    localStorage.removeItem('donor_userInfo')
+    localStorage.removeItem('donor_isLoggedIn')
+    localStorage.removeItem('donor_userType')
+
+    sessionStorage.removeItem('donor_token')
+    sessionStorage.removeItem('donor_userInfo')
+    sessionStorage.removeItem('donor_isLoggedIn')
+    sessionStorage.removeItem('donor_userType')
+
+    // 3. 提示并跳转
+    ElMessage.success('已安全退出，让爱心稍作休息')
+    
+    // 原生跳转回捐赠人登录页，彻底刷新浏览器内存，防止状态残留
+    window.location.href = '/donorLogin' 
+    
+  }).catch(() => {
+    // 用户点击取消，继续留在页面
+  })
+}
+
 </script>
 <style scoped>
 .donor-layout {

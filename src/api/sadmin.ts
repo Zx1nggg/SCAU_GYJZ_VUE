@@ -40,3 +40,8 @@ export const updateUserStatus = (id: number, status: number) => {
 export const getPlatformStats = () => {
   return request.get('/v1/sadmin/stats')
 }
+
+// 重置用户密码为默认密码
+export const resetUserPassword = (userId: number) => {
+  return request.put(`/v1/users/${userId}/reset-password`)
+}

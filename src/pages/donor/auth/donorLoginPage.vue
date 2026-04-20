@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { donorLogin, type User } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth' // 引入 authStore
@@ -117,6 +118,12 @@ const handleLogin = async () => {
     
     if (response.code === 200) {
       const userData = response.data // userData 就是后端返回的 data 对象
+
+      if (userData?.userStatus === 2) {
+        ElMessage.error('账号因为违反相关约定已被封禁，请联系管理员解封')
+        // 立刻终止程序，绝对不能往下执行存 Token 的代码！
+        return 
+      }
       
       const userInfo = {
         id: userData?.id,

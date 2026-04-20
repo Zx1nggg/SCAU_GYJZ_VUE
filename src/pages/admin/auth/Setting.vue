@@ -116,7 +116,7 @@
           <el-input v-model="profileEditForm.nickname" placeholder="请输入昵称" maxlength="40" show-word-limit />
         </el-form-item>
         <el-form-item label="联系电话">
-          <el-input v-model="profileEditForm.phone" placeholder="请输入手机号" maxlength="20" />
+          <el-input v-model="profileEditForm.phone" disabled placeholder="请输入手机号" maxlength="20" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -183,7 +183,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="官方电话">
+            <el-form-item label="官方电话" :style="{ width: '220px' }">
               <el-input v-model="orgForm.contactPhone" placeholder="咨询热线" disabled />
             </el-form-item>
           </el-col>
@@ -225,7 +225,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore, type UserInfo } from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 import { Plus, User, OfficeBuilding, Setting } from '@element-plus/icons-vue'
 import request from '@/utils/request'
@@ -383,7 +383,33 @@ const handleUpdatePassword = async () => {
     if (res.code === 200) {
       ElMessage.success('密码修改成功，请重新登录')
       showPasswordDialog.value = false
-      // 可以在此处添加延迟退出登录逻辑
+      setTimeout(() => {
+        // 1. 获取当前用户类型（用来判断要清空哪套前缀的缓存）
+        const userType = authStore.userInfo?.userType || 'donor'
+        const prefix = userType === 'admin' ? 'admin_' : 'donor_'
+
+        // 2. 清除 Pinia 里的内存状态
+        authStore.token = ''
+        authStore.userInfo = null
+
+        // 3. 彻底清空登录凭证 Token
+        localStorage.removeItem(`${prefix}token`)
+        localStorage.removeItem(`${prefix}userInfo`)
+        localStorage.removeItem(`${prefix}isLoggedIn`)
+        localStorage.removeItem(`${prefix}userType`)
+        
+        sessionStorage.removeItem(`${prefix}token`)
+        sessionStorage.removeItem(`${prefix}userInfo`)
+        sessionStorage.removeItem(`${prefix}isLoggedIn`)
+        sessionStorage.removeItem(`${prefix}userType`)
+
+        // 4. 必须抹除本地记住的“旧密码”！
+        localStorage.removeItem(`${prefix}saved_password`)
+        // 手机号/账号可以不删，这样跳转回去时账号还在，只需重新输新密码即可
+
+        // 5. 原生跳转回对应的登录页，彻底刷新环境
+       window.location.href = userType === 'admin' ? '/#/adminLogin' : '/#/'
+      }, 1500)
     } else {
       ElMessage.error(res.msg || '密码修改失败')
     }

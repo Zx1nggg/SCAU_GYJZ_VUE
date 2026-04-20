@@ -222,11 +222,6 @@ const loadRecentActivities = async () => {
   }
 }
 
-// === 待处理事项 (先保留静态占位) ===
-const pendingTasks = ref([
-  { id: 1, type: '项目审核', title: '希望小学建设项目', createTime: '2024-03-28 10:30', tagType: 'warning' },
-  { id: 2, type: '捐赠审核', title: '匿名用户捐赠1000元', createTime: '2024-03-28 09:15', tagType: 'info' }
-])
 
 // === 图表动态数据加载 ===
 const loadChartTrend = async () => {

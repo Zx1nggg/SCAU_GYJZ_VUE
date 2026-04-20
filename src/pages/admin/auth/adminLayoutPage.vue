@@ -99,12 +99,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import {  computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Management, Bell, ArrowDown, User, OfficeBuilding, Setting,
-  SwitchButton, Odometer, Folder, List, Plus, Money,
+  Management,  ArrowDown, User, OfficeBuilding, Setting,
+  SwitchButton, Odometer, Folder, List, Money,
   DataAnalysis
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
@@ -112,7 +112,6 @@ import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const notificationCount = ref(3)
 const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 // 当前激活的菜单项

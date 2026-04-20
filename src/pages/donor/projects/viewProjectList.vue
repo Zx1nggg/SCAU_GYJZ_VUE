@@ -220,7 +220,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Star, StarFilled } from '@element-plus/icons-vue' // 引入星星图标
 import { useAuthStore } from '@/stores/auth'
@@ -228,7 +227,7 @@ import { getProjectList } from '@/api/project'
 import { createDonation } from '@/api/donation'
 import { getMySubscriptions, subscribeProject, unsubscribeProject } from '@/api/subscription'
 
-const router = useRouter()
+
 const authStore = useAuthStore()
 
 // 默认占位图链接

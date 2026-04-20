@@ -22,7 +22,13 @@ export const useAuthStore = defineStore('auth', () => {
   // State - 全面拥抱 JWT
   const token = ref<string | null>(null)
   const userInfo = ref<UserInfo | null>(null)
-  
+  const getPrefix = () => {
+    // 根据 URL 判断当前是管理员端还是捐赠人端
+    const isUrlAdmin = window.location.pathname.includes('admin') || 
+                       window.location.hash.includes('admin') || 
+                       window.location.pathname.includes('Admin')
+    return isUrlAdmin ? 'admin_' : 'donor_'
+  }
   // Getters
   // 只要有 token 和 userInfo 就认为已登录
   const isLoggedIn = computed(() => !!token.value && !!userInfo.value)
@@ -108,14 +114,16 @@ export const useAuthStore = defineStore('auth', () => {
   
   // 初始化用户信息（兼顾 localStorage 和 sessionStorage）
   const initAuth = () => {
-    // 1. 尝试找 token
-    const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token')
+    const prefix = getPrefix() // 获取前缀
+
+    // 1. 精准找 token
+    const storedToken = localStorage.getItem(`${prefix}token`) || sessionStorage.getItem(`${prefix}token`)
     if (storedToken) {
       token.value = storedToken
     }
 
-    // 2. 尝试找 userInfo
-    const storedUserInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo')
+    // 2. 精准找 userInfo
+    const storedUserInfo = localStorage.getItem(`${prefix}userInfo`) || sessionStorage.getItem(`${prefix}userInfo`)
     if (storedUserInfo) {
       try {
         userInfo.value = JSON.parse(storedUserInfo)
@@ -129,11 +137,13 @@ export const useAuthStore = defineStore('auth', () => {
   const updateUserInfo = (info: Partial<UserInfo>) => {
     if (userInfo.value) {
       userInfo.value = { ...userInfo.value, ...info }
+      const prefix = getPrefix() // 获取前缀
+      
       // 同步更新到对应的存储中
-      if (localStorage.getItem('userInfo')) {
-        localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
-      } else if (sessionStorage.getItem('userInfo')) {
-        sessionStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+      if (localStorage.getItem(`${prefix}userInfo`)) {
+        localStorage.setItem(`${prefix}userInfo`, JSON.stringify(userInfo.value))
+      } else if (sessionStorage.getItem(`${prefix}userInfo`)) {
+        sessionStorage.setItem(`${prefix}userInfo`, JSON.stringify(userInfo.value))
       }
     }
   }

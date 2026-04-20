@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { DataAnalysis, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
@@ -169,7 +169,6 @@ const loadTableData = async () => {
       params.endDate = dateRange.value[1]
     }
 
-    // 这里使用的是我们刚才精化的 getDonationList 接口
     const res: any = await getDonationList(params)
     if (res.code === 200 && res.data) {
       tableData.value = res.data.records
@@ -182,7 +181,7 @@ const loadTableData = async () => {
   }
 }
 
-// 模拟加载聚合图表数据 (实战中如果后端没有图表聚合API，可以拉取size=500的大量数据在前端进行聚合计算展示)
+// 模拟加载聚合图表数据-当前拉取捐赠记录列表来加载图表数据
 const loadChartData = async () => {
   try {
     const params: any = { page: 1, size: 500 } // 抓取较多数据进行图表统计
@@ -305,7 +304,7 @@ const handleFilterChange = () => {
   loadChartData()
 }
 
-// 原生前端导出纯净 CSV 功能 (防 Excel 科学计数法版)
+// 原生前端导出纯净 CSV 功能 
 const exportToCSV = () => {
   if (tableData.value.length === 0) {
     ElMessage.warning('当前没有可导出的数据')

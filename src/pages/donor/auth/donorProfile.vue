@@ -29,9 +29,12 @@
             </div>
           </div>
 
-          <div class="action-wrap">
-            <el-button type="primary" plain class="w-full" @click="openEditDialog">
+          <div class="action-wrap" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+            <el-button type="primary" plain style="width: 100%; margin: 0;" @click="openEditDialog">
               修改个人信息
+            </el-button>
+            <el-button type="warning" plain style="width: 100%; margin: 0;" @click="openPwdDialog">
+              修改密码
             </el-button>
           </div>
         </el-card>
@@ -128,6 +131,26 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="pwdDialogVisible" title="修改密码" width="400px" destroy-on-close>
+      <el-form :model="pwdForm" :rules="pwdRules" ref="pwdFormRef" label-width="80px">
+        <el-form-item label="原密码" prop="oldPassword">
+          <el-input type="password" v-model="pwdForm.oldPassword" placeholder="请输入原密码" show-password />
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input type="password" v-model="pwdForm.newPassword" placeholder="请输入新密码 (不少于6位)" show-password />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input type="password" v-model="pwdForm.confirmPassword" placeholder="请再次输入新密码" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="pwdDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="pwdSubmitting" @click="submitPwd">确认修改</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- 荣誉证书弹窗 -->
     <el-dialog v-model="certDialogVisible" title="" width="550px" center destroy-on-close custom-class="cert-dialog">
       <div v-if="currentCert" class="certificate-wrapper" id="certificate-content">
@@ -188,6 +211,99 @@ const queryParams = reactive({
   page: 1,
   size: 10
 })
+ //=== 修改密码相关 ===
+const pwdDialogVisible = ref(false)
+const pwdSubmitting = ref(false)
+const pwdFormRef = ref()
+const pwdForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const validateConfirmPwd = (value: string, callback: any) => {
+  if (value === '') {
+    callback(new Error('请再次输入新密码'))
+  } else if (value !== pwdForm.newPassword) {
+    callback(new Error('两次输入的新密码不一致!'))
+  } else {
+    callback()
+  }
+}
+
+const pwdRules = {
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, validator: validateConfirmPwd, trigger: 'blur' }
+  ]
+}
+
+const openPwdDialog = () => {
+  // 每次打开弹窗前，清空旧数据
+  pwdForm.oldPassword = ''
+  pwdForm.newPassword = ''
+  pwdForm.confirmPassword = ''
+  pwdDialogVisible.value = true
+}
+
+const submitPwd = async () => {
+  if (!pwdFormRef.value) return
+  await pwdFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      const userId = authStore.userInfo?.id
+      if (!userId) return
+
+      try {
+        pwdSubmitting.value = true
+        // 调用我们已经写好的后端接口
+        const res: any = await request.put(`/v1/users/${userId}/password`, {
+          oldPassword: pwdForm.oldPassword,
+          newPassword: pwdForm.newPassword
+        })
+        
+        if (res.code === 200) {
+          ElMessage.success('密码修改成功，请重新登录')
+          pwdDialogVisible.value = false
+          
+          // 延迟 1.5 秒后清除捐赠人专属缓存并退出
+          setTimeout(() => {
+            const prefix = 'donor_'
+            authStore.token = ''
+            authStore.userInfo = null
+            
+            // 清理 Token 及用户信息
+            localStorage.removeItem(`${prefix}token`)
+            localStorage.removeItem(`${prefix}userInfo`)
+            localStorage.removeItem(`${prefix}isLoggedIn`)
+            localStorage.removeItem(`${prefix}userType`)
+            
+            // 删除浏览器记住的旧密码，防止用户重新跳转回来时自动填错报错！
+            localStorage.removeItem(`${prefix}saved_password`) 
+            
+            sessionStorage.removeItem(`${prefix}token`)
+            sessionStorage.removeItem(`${prefix}userInfo`)
+            sessionStorage.removeItem(`${prefix}isLoggedIn`)
+            sessionStorage.removeItem(`${prefix}userType`)
+
+            // 退回捐赠人登录页
+            window.location.href = '/#/donorLogin' 
+          }, 1500)
+          
+        } else {
+          ElMessage.error(res.msg || '密码修改失败')
+        }
+      } catch (err) {
+        ElMessage.error('请求失败')
+      } finally {
+        pwdSubmitting.value = false
+      }
+    }
+  })
+}
 
 // === 加载捐赠记录 ===
 const loadDonations = async () => {

@@ -75,6 +75,20 @@
             />
           </template>
         </el-table-column>
+
+        <el-table-column label="操作" width="120" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              type="danger"
+              size="small"
+              plain
+              :disabled="row.id === currentUserId"
+              @click="handleResetPassword(row)"
+            >
+              重置密码
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
 
       <div class="pagination-wrapper">
@@ -96,13 +110,17 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
-import { getUserList, updateUserStatus } from '@/api/sadmin'
+import { getUserList, updateUserStatus,resetUserPassword } from '@/api/sadmin'
+import { useAuthStore } from '@/stores/auth'
 
 const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 const loading = ref(false)
 const userList = ref<any[]>([])
 const total = ref(0)
+
+const authStore = useAuthStore()
+const currentUserId = authStore.userInfo?.id
 
 const queryParams = reactive({
   page: 1,
@@ -135,7 +153,7 @@ const handleQuery = () => {
   loadData()
 }
 
-// 🌟 更改用户状态 (封禁/解禁)
+// 更改用户状态 (封禁/解禁)
 const handleStatusChange = async (row: any, newStatus: number) => {
   const actionText = newStatus === 1 ? '解禁' : '封禁'
   try {
@@ -160,6 +178,32 @@ const handleStatusChange = async (row: any, newStatus: number) => {
     // 捕获取消操作，恢复开关状态
     row.userStatus = newStatus === 1 ? 2 : 1
   }
+}
+
+const handleResetPassword = (row: any) => {
+  ElMessageBox.confirm(
+    `高危操作：确定要将用户【${row.nickname || row.username || row.phone}】的密码重置为默认密码 GY1234 吗？`,
+    '重置密码确认',
+    {
+      confirmButtonText: '确定重置',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(async () => {
+    try {
+      // 调用后端重置接口，只传 userId 过去即可
+      const res: any = await resetUserPassword(row.id)
+      if (res.code === 200) {
+        ElMessage.success(`操作成功！已将该用户密码重置为 GY1234`)
+      } else {
+        ElMessage.error(res.msg || '重置失败')
+      }
+    } catch (error) {
+      ElMessage.error('网络异常，重置请求失败')
+    }
+  }).catch(() => {
+    // 用户点击取消，安静退出
+  })
 }
 
 const formatDateTime = (timeStr: string) => {

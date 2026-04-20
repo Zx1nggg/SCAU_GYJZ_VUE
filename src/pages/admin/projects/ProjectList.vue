@@ -193,7 +193,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import { getProjectList, deleteProject, getProjectStatistics, type Project, type ProjectStatistics, type PageResult } from '@/api/project'
+import { getProjectList, deleteProject, getProjectStatistics, type Project, type ProjectStatistics } from '@/api/project'
 import ProjectForm from './ProjectForm.vue'
 import { useAuthStore } from '@/stores/auth'
 

@@ -108,6 +108,11 @@ const handleLogin = async () => {
     if (response.code === 200) {
       console.log('管理员登录响应:', response)
       const userData = response.data
+      if (userData?.userStatus === 2) {
+        ElMessage.error('账号因为违反相关约定已被封禁，请联系管理员解封')
+        // 立刻终止程序，绝对不能往下执行存 Token 的代码！
+        return 
+      }
       
       // 1. 构建完整的用户信息对象，补齐缺失字段
       const userInfo = {

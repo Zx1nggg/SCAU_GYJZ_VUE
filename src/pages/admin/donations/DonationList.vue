@@ -9,7 +9,7 @@
         <el-form-item label="项目标题">
           <el-input v-model="projectSearch.title" placeholder="请输入项目标题" clearable />
         </el-form-item>
-        <el-form-item label="项目分类">
+        <el-form-item label="项目分类" style="min-width: 200px;">
           <el-select v-model="projectSearch.category" placeholder="请选择分类" clearable>
             <el-option label="教育助学" value="教育助学" />
             <el-option label="医疗救助" value="医疗救助" />
@@ -55,9 +55,9 @@
           <el-input v-model="donationSearch.donorName" placeholder="请输入捐赠人姓名" clearable />
         </el-form-item>
         <el-form-item label="金额区间">
-          <el-input-number v-model="donationSearch.minAmount" placeholder="最小金额" />
+          <el-input-number v-model="donationSearch.minAmount" placeholder="最小金额" :step="10" />
           -
-          <el-input-number v-model="donationSearch.maxAmount" placeholder="最大金额" />
+          <el-input-number v-model="donationSearch.maxAmount" placeholder="最大金额" :step="100" />
         </el-form-item>
         <el-form-item label="捐赠时间">
           <el-date-picker

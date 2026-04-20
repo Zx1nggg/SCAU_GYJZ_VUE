@@ -102,7 +102,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { createProject, updateProject, type Project, type Organization } from '@/api/project'
+import { createProject, updateProject, type Project } from '@/api/project'
 import { useAuthStore } from '@/stores/auth'
 import request from '@/utils/request'
 
@@ -120,7 +120,7 @@ const emit = defineEmits<{
 const formRef = ref()
 const submitting = ref(false)
 const dateRange = ref<string[]>([])
-const myOrganization = ref<Organization | null>(null)
+
 
 const isEdit = computed(() => !!props.project?.id)
 
@@ -225,7 +225,6 @@ const uploadCover = async (options: any) => {
 
   try {
     // 2. 发起 POST 请求调用后端上传接口
-    // 注意：request 是你封装好的 Axios 实例，它会自动处理 BaseURL 和 Token 注入
     const res: any = await request.post('/v1/upload/project', formData, {
       headers: {
         'Content-Type': 'multipart/form-data' // 必须指定为表单数据格式

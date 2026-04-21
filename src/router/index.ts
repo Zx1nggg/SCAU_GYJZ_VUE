@@ -1,4 +1,6 @@
 import {createWebHashHistory, createRouter} from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
     {
@@ -127,5 +129,51 @@ const router = createRouter({
     history: createWebHashHistory(),
     routes
 })
+router.beforeEach((to, _from, next) => {
+    
+    const authStore = useAuthStore()
+
+    // 1. 精准锁定需要保护的区域 (避开 Login 和 Register 页面)
+    const isAdminSecuredRoute = to.path.startsWith('/admin/main') || to.path.startsWith('/sadmin/main')
+    
+    // 只有以 /donor/main 开头的才是捐赠人登录后才能看的界面
+    const isDonorSecuredRoute = to.path.startsWith('/donor/main')
+
+    if (isAdminSecuredRoute) {
+        if (!authStore.isLoggedIn) {
+            ElMessage.warning('请先登录管理员账号')
+            return next('/adminLogin') 
+        }
+        if (!authStore.isAdmin) {
+            ElMessage.error('越权拦截：您的身份无法访问管理后台！')
+            return next('/donor/main/dashboard') 
+        }
+    }
+
+   
+    if (isDonorSecuredRoute) {
+        if (!authStore.isLoggedIn) {
+            ElMessage.warning('请先登录账号')
+            return next('/donorLogin') 
+        }
+        if (!authStore.isDonor) {
+            ElMessage.error(' 越权拦截：管理员无需访问捐赠前端！')
+            return next('/admin/main/dashboard') 
+        }
+    }
+
+    
+    const isAuthPage = ['donorLogin', 'adminLogin', 'donorRegister', 'adminRegister'].includes(to.name as string)
+    if (isAuthPage && authStore.isLoggedIn) {
+        ElMessage.info('您已登录，无需重复操作')
+        if (authStore.isAdmin) {
+            return next(authStore.isSuperAdmin ? '/sadmin/main/super-dashboard' : '/admin/main/dashboard')
+        } else {
+            return next('/donor/main/dashboard')
+        }
+    }
+    next()
+})
+
 
 export default router;
